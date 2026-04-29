@@ -10,17 +10,17 @@ from ragas import evaluate
 from ragas.metrics import faithfulness, answer_relevancy
 from ragas.run_config import RunConfig
 
-# --- PERFORMANS TAKİBİNİ BAŞLAT ---
-GENEL_BASLANGIC_ZAMANI = time.time()
+# --- PERFORMANS TAKİBİNİ BAŞLAT / START PERFORMANCE TRACKING ---
+GENEL_BASLANGIC_ZAMANI = time.time() # GENERAL_START_TIME
 
 def get_gpu_memory():
-    """GPU (VRAM) kullanımını GB cinsinden döndürür."""
+    """GPU (VRAM) kullanımını GB cinsinden döndürür.""" # Returns GPU (VRAM) usage in GB.
     if torch.cuda.is_available():
         return torch.cuda.max_memory_allocated() / (1024**3)
     return 0.0
 
 # =====================================================================
-# 1. TEKRAR ÜRETİLEBİLİRLİK (REPRODUCIBILITY) AYARLARI VE LOGLARI
+# 1. TEKRAR ÜRETİLEBİLİRLİK (REPRODUCIBILITY) AYARLARI VE LOGLARI / REPRODUCIBILITY SETTINGS AND LOGS
 # =====================================================================
 EXPERIMENT_CONFIG = {
     "model_name": "gemma3:27b",
@@ -36,9 +36,9 @@ EXPERIMENT_CONFIG = {
     "retrieval_k": 3
 }
 
-print("🚀 Sistem Başlatılıyor: Hatasız main4.py Altyapısı + Detaylı Loglama")
+print("🚀 Sistem Başlatılıyor / 🚀 System Starting Up") 
 
-# --- VERİ VE VEKTÖR SİSTEMİ ---
+# --- VERİ VE VEKTÖR SİSTEMİ / DATA AND VECTOR SYSTEM---
 loader = PyPDFDirectoryLoader("data/") # Gerçek testte burayı "data/" yapmayı unutma
 docs = loader.load()
 
@@ -51,12 +51,12 @@ splits = text_splitter.split_documents(docs)
 embeddings = HuggingFaceEmbeddings(model_name=EXPERIMENT_CONFIG["embedding_model"])
 vectorstore = FAISS.from_documents(splits, embeddings)
 
-# --- LLM TANIMLARI ---
+# --- LLM TANIMLARI / LLM DEFINITIONS---
 # main4.py'de hatasız çalışan o sade LLM yapısını kullanıyoruz. 
 # Hiçbir ekstra Wrapper veya ChatOllama kalkanı YOK.
 llm = Ollama(
     model=EXPERIMENT_CONFIG["model_name"], 
-    timeout=1200.0, # 126 PDF'in yoğun işlemleri için 20 dakika süre
+    timeout=1200.0, 
     temperature=EXPERIMENT_CONFIG["temperature"],
     top_p=EXPERIMENT_CONFIG["top_p"],
     top_k=EXPERIMENT_CONFIG["top_k"],
@@ -80,17 +80,17 @@ queries = [
 final_data = []
 detailed_research_logs = []
 
-print("\n📝 Cevaplar Üretiliyor ve Performans Logları Toplanıyor...")
+print("\n📝 Cevaplar Üretiliyor ve Performans Logları Toplanıyor...  \n📝 Responses are being generated and performance logs are being collected...")
 
 for i, q in enumerate(queries):
-    print(f"🔄 Soru {i+1}/11 işleniyor...")
+    print(f"🔄 Soru {i+1}/11 işleniyor... \n🔄 Question {i+1}/11 is being processed...")
     
     # =====================================================================
-    # 2. RAG RETRIEVAL KALİTESİ (Geri Çağırma Metrikleri)
+    # 2. RAG RETRIEVAL KALİTESİ (Geri Çağırma Metrikleri) / RAG RETRIEVAL QUALITY (Recall Metrics)
     # =====================================================================
     t_retrieval_start = time.time()
     
-    # Skorları ve belgeleri çek (FAISS varsayılan olarak L2 Distance döndürür)
+    # Skorları ve belgeleri çek (FAISS varsayılan olarak L2 Distance döndürür) / Pull scores and documents (FAISS returns L2 Distance by default)
     retrieved_docs_with_scores = vectorstore.similarity_search_with_score(q, k=EXPERIMENT_CONFIG["retrieval_k"])
     
     retrieval_latency = time.time() - t_retrieval_start
@@ -115,14 +115,14 @@ Instruction: Please answer the question above directly and concisely. Limit your
     context_window_usage += len(prompt_template)
     
     # =====================================================================
-    # 3. PERFORMANS VE KAYNAK KULLANIMI (Verimlilik Analizi)
+    # 3. PERFORMANS VE KAYNAK KULLANIMI (Verimlilik Analizi) / PERFORMANCE AND RESOURCE UTILIZATION (Efficiency Analysis)
     # =====================================================================
     t_gen_start = time.time()
     ttft = None
     token_count = 0
     response_text = ""
     
-    # TTFT ve TPS ölçümü için LLM Stream kullanıyoruz
+    # TTFT ve TPS ölçümü için LLM Stream kullanıyoruz / We use LLM Stream for TTFT and TPS measurement.
     for chunk in llm.stream(prompt_template):
         if ttft is None:
             ttft = time.time() - t_gen_start
@@ -159,9 +159,9 @@ Instruction: Please answer the question above directly and concisely. Limit your
         }
     })
 
-print("\n💾 Araştırma Verileri Diske Kaydediliyor...")
+print("\n💾 Araştırma Verileri Diske Kaydediliyor...  \n💾 Research data is being saved to disk...")
 
-# Dosyaları okuma sırasına göre numaralandırıyoruz
+# Dosyaları okuma sırasına göre numaralandırıyoruz # We number the files according to the order in which they are read.
 with open("1_EXPERIMENT_CONFIG.json", "w", encoding="utf-8") as f:
     json.dump(EXPERIMENT_CONFIG, f, ensure_ascii=False, indent=4)
 
@@ -180,13 +180,12 @@ with open("4_RAGAS_RAW_RESULTS.json", "w", encoding="utf-8") as f:
 # 4. RAGAS KALİTE DEĞERLENDİRMESİ
 # =====================================================================
 try:
-    print("📊 Ragas Analizi Başlıyor (main4.py Kararlılığıyla)...")
+    print("📊 Ragas Analizi Başlıyor / 📊 Ragas Analysis Begins")
     dataset = Dataset.from_list(final_data)
     
-    # Ragas değerlendirmesini boğan aşırı yükleri önlemek için max_workers=1
     custom_config = RunConfig(timeout=1200, max_workers=1)
     
-    # main4.py'deki o sorunsuz, doğrudan kullanımı (Wrapper olmadan) aynen aldım
+
     result = evaluate(
         dataset,
         metrics=[faithfulness, answer_relevancy],
@@ -201,26 +200,26 @@ try:
     clean_df['answer_relevancy'] = clean_df['answer_relevancy'].round(3)
     clean_df.to_csv("5_FINAL_ACADEMIC_REPORT.csv", index=False, encoding='utf-8-sig')
     
-    print("\n🏆 ANALİZ BAŞARIYLA TAMAMLANDI!")
+    print("\n🏆 ANALİZ BAŞARIYLA TAMAMLANDI! / 🏆 ANALYSIS SUCCESSFULLY COMPLETED!")
 
 except Exception as e:
-    print(f"❌ Ragas sırasında kritik hata: {e}")
+    print(f"❌ Ragas sırasında kritik hata: {e}  / Critical error during RAGAs: {e}")
 
 # =====================================================================
-# 5. SİSTEM PERFORMANS METRİKLERİ
+# 5. SİSTEM PERFORMANS METRİKLERİ / SYSTEM PERFORMANCE METRICS
 # =====================================================================
-genel_sure_sn = time.time() - GENEL_BASLANGIC_ZAMANI
-genel_sure_dk = genel_sure_sn / 60
-ram_kullanimi = psutil.virtual_memory().percent
-gpu_kullanimi = get_gpu_memory()
+genel_sure_sn = time.time() - GENEL_BASLANGIC_ZAMANI # general_time_sec = time.time() - GENERAL_START_TIME
+genel_sure_dk = genel_sure_sn / 60 # general_time_min = general_time_sec / 60
+ram_kullanimi = psutil.virtual_memory().percent # ram_usage
+gpu_kullanimi = get_gpu_memory() # gpu_usage
 
-performans_raporu = f"""
+performans_raporu = f""" # performance_report
 =========================================
-SİSTEM PERFORMANS RAPORU
+SİSTEM PERFORMANS RAPORU / SYSTEM PERFORMANCE REPORT
 =========================================
-Toplam İşlem Süresi : {genel_sure_dk:.2f} Dakika ({genel_sure_sn:.1f} Saniye)
-Sistem RAM Kullanımı: % {ram_kullanimi}
-Maksimum GPU (VRAM) : {gpu_kullanimi:.2f} GB
+Toplam İşlem Süresi / Total Processing Time : {genel_sure_dk:.2f} Dakika ({genel_sure_sn:.1f} Saniye) 
+Sistem RAM Kullanımı / System RAM Usage : % {ram_kullanimi}
+Maximum GPU (VRAM) : {gpu_kullanimi:.2f} GB
 
 =========================================
 """
@@ -229,4 +228,4 @@ print(performans_raporu)
 with open("6_SISTEM_PERFORMANSI.txt", "w", encoding="utf-8") as f:
     f.write(performans_raporu)
 
-print("✅ Tüm işlemler bitti! Raporlar 1'den 6'ya kadar proje klasörüne başarıyla kaydedildi.")
+print("✅ Tüm işlemler bitti! Raporlar 1'den 6'ya kadar proje klasörüne başarıyla kaydedildi. \n ✅ All operations completed! Reports 1 through 6 have been successfully saved to the project folder.")
