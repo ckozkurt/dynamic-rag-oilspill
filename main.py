@@ -28,7 +28,7 @@ EXPERIMENT_CONFIG = {
     "temperature": 0.0,
     "top_p": 0.9,
     "top_k": 40,
-    "max_tokens_predict": 16384,   # <-- 126 PDF'te Faithfulness metriği yarım kalmasın diye 4096 yapıldı
+    "max_tokens_predict": 16384,  
     "presence_penalty": 0.0,
     "frequency_penalty": 0.0,
     "chunk_size": 1500,
@@ -39,7 +39,7 @@ EXPERIMENT_CONFIG = {
 print("🚀 Sistem Başlatılıyor: Hatasız main4.py Altyapısı + Detaylı Loglama")
 
 # --- VERİ VE VEKTÖR SİSTEMİ ---
-loader = PyPDFDirectoryLoader("data/") # Gerçek testte burayı "data/" yapmayı unutma
+loader = PyPDFDirectoryLoader("data/") 
 docs = loader.load()
 
 text_splitter = RecursiveCharacterTextSplitter(
@@ -52,8 +52,6 @@ embeddings = HuggingFaceEmbeddings(model_name=EXPERIMENT_CONFIG["embedding_model
 vectorstore = FAISS.from_documents(splits, embeddings)
 
 # --- LLM TANIMLARI ---
-# main4.py'de hatasız çalışan o sade LLM yapısını kullanıyoruz. 
-# Hiçbir ekstra Wrapper veya ChatOllama kalkanı YOK.
 llm = Ollama(
     model=EXPERIMENT_CONFIG["model_name"], 
     timeout=1200.0, # 126 PDF'in yoğun işlemleri için 20 dakika süre
@@ -90,7 +88,6 @@ for i, q in enumerate(queries):
     # =====================================================================
     t_retrieval_start = time.time()
     
-    # Skorları ve belgeleri çek (FAISS varsayılan olarak L2 Distance döndürür)
     retrieved_docs_with_scores = vectorstore.similarity_search_with_score(q, k=EXPERIMENT_CONFIG["retrieval_k"])
     
     retrieval_latency = time.time() - t_retrieval_start
@@ -122,7 +119,6 @@ Instruction: Please answer the question above directly and concisely. Limit your
     token_count = 0
     response_text = ""
     
-    # TTFT ve TPS ölçümü için LLM Stream kullanıyoruz
     for chunk in llm.stream(prompt_template):
         if ttft is None:
             ttft = time.time() - t_gen_start
@@ -177,16 +173,15 @@ with open("4_RAGAS_RAW_RESULTS.json", "w", encoding="utf-8") as f:
     json.dump(final_data, f, ensure_ascii=False, indent=4)
 
 # =====================================================================
-# 4. RAGAS KALİTE DEĞERLENDİRMESİ
+# 4. RAGAs KALİTE DEĞERLENDİRMESİ
 # =====================================================================
 try:
     print("📊 Ragas Analizi Başlıyor (main4.py Kararlılığıyla)...")
     dataset = Dataset.from_list(final_data)
     
-    # Ragas değerlendirmesini boğan aşırı yükleri önlemek için max_workers=1
+    # RAGAs değerlendirmesini boğan aşırı yükleri önlemek için max_workers=1
     custom_config = RunConfig(timeout=1200, max_workers=1)
     
-    # main4.py'deki o sorunsuz, doğrudan kullanımı (Wrapper olmadan) aynen aldım
     result = evaluate(
         dataset,
         metrics=[faithfulness, answer_relevancy],
@@ -204,7 +199,7 @@ try:
     print("\n🏆 ANALİZ BAŞARIYLA TAMAMLANDI!")
 
 except Exception as e:
-    print(f"❌ Ragas sırasında kritik hata: {e}")
+    print(f"❌ RAGAs sırasında kritik hata: {e}")
 
 # =====================================================================
 # 5. SİSTEM PERFORMANS METRİKLERİ
@@ -216,7 +211,7 @@ gpu_kullanimi = get_gpu_memory()
 
 performans_raporu = f"""
 =========================================
-SİSTEM PERFORMANS RAPORU
+SİSTEM PERFORMANS RAPORU / 
 =========================================
 Toplam İşlem Süresi : {genel_sure_dk:.2f} Dakika ({genel_sure_sn:.1f} Saniye)
 Sistem RAM Kullanımı: % {ram_kullanimi}
