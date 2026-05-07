@@ -28,7 +28,7 @@ EXPERIMENT_CONFIG = {
     "temperature": 0.0,
     "top_p": 0.9,
     "top_k": 40,
-    "max_tokens_predict": 16384,   # <-- 126 PDF'te Faithfulness metriği yarım kalmasın diye 4096 yapıldı
+    "max_tokens_predict": 16384,  
     "presence_penalty": 0.0,
     "frequency_penalty": 0.0,
     "chunk_size": 1500,
@@ -36,10 +36,10 @@ EXPERIMENT_CONFIG = {
     "retrieval_k": 3
 }
 
-print("🚀 Sistem Başlatılıyor: Hatasız main4.py Altyapısı + Detaylı Loglama")
+print("🚀 Sistem Başlatılıyor!")
 
 # --- VERİ VE VEKTÖR SİSTEMİ ---
-loader = PyPDFDirectoryLoader("data/") # Gerçek testte burayı "data/" yapmayı unutma
+loader = PyPDFDirectoryLoader("data/")
 docs = loader.load()
 
 text_splitter = RecursiveCharacterTextSplitter(
@@ -52,8 +52,6 @@ embeddings = HuggingFaceEmbeddings(model_name=EXPERIMENT_CONFIG["embedding_model
 vectorstore = FAISS.from_documents(splits, embeddings)
 
 # --- LLM TANIMLARI ---
-# main4.py'de hatasız çalışan o sade LLM yapısını kullanıyoruz. 
-# Hiçbir ekstra Wrapper veya ChatOllama kalkanı YOK.
 llm = Ollama(
     model=EXPERIMENT_CONFIG["model_name"], 
     timeout=1200.0, # 126 PDF'in yoğun işlemleri için 20 dakika süre
@@ -180,7 +178,7 @@ with open("4_RAGAS_RAW_RESULTS.json", "w", encoding="utf-8") as f:
 # 4. RAGAS KALİTE DEĞERLENDİRMESİ
 # =====================================================================
 try:
-    print("📊 Ragas Analizi Başlıyor (main4.py Kararlılığıyla)...")
+    print("📊 Ragas Analizi Başlıyor ")
     dataset = Dataset.from_list(final_data)
     
     # Ragas değerlendirmesini boğan aşırı yükleri önlemek için max_workers=1
