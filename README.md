@@ -1,5 +1,5 @@
 # dynamic-rag-oilspill
-Code and dataset for our paper: 'Scientific Discovery via Dynamic RAG Architecture'. A Gemma 3-based local RAG framework using FAISS for trend synthesis and research gap identification in marine oil spill detection.
+Code and dataset for our paper: "Scientific Discovery via Dynamic RAG Architecture: Gemma Based Local Framework for up-to-date Trend Synthesis Identification on Oil Spill in Naval Research"
 # Scientific Discovery via Dynamic RAG Architecture
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
